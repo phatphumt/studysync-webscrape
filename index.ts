@@ -1,10 +1,15 @@
 import { load } from "cheerio";
 import { uid } from "uid";
 
-const dfkljhkldfh = async () => {
+type Content = {
+  url: string;
+  content: string[];
+}
+
+async function getUrls(searchTerms: string) {
   try {
     const response = await fetch(
-      "https://www.google.com/search?q=what+is+anatomy"
+      `https://www.google.com/search?q=${searchTerms}`
     );
 
     const html = await response.text();
@@ -20,17 +25,32 @@ const dfkljhkldfh = async () => {
   } catch (error) {
     throw error;
   }
-};
+}
 
-const stuff = await dfkljhkldfh();
+let searchTerms: string = ""
+for await (const chunk of Bun.stdin.stream()) {
+  // chunk is Uint8Array
+  // this converts it to text (assumes ASCII encoding)
+  const chunkText = Buffer.from(chunk).toString();
+  searchTerms = chunkText
+  break
+}
+
+const a = searchTerms.split(" ").join("+")
+console.log(a)
+
+
+/* extract the urls */ 
+const stuff = await getUrls(a);
 let actualURL: string[] = []
 stuff.forEach(e => {
-  const a = e.match(/\/url\?q=/g)
-  if (!a) {
+  const urlRegex = /\/url\?q=/g
+  const googleRegx = /^\/url\?q=https:\/\/(.*\.)?google\.com(\/[^&]+)?(&.*)?$/
+
+  if (!(urlRegex.test(e))) {
     return
   }
-  const regx = /^\/url\?q=https:\/\/(.*\.)?google\.com(\/[^&]+)?(&.*)?$/
-  if (regx.test(e)) {
+  if (googleRegx.test(e)) {
     return
   }
   actualURL.push(e)
@@ -38,9 +58,4 @@ stuff.forEach(e => {
 const id = uid(4)
 Bun.write(`./results/urlsss-${id}.txt`, actualURL.join('\n'))
 
-// stuff.forEach(async (e) => {
-//   const data = await fetch(`e)
-//   const datata = await data.text()
-//   const $ = load(datata)
-//   const stuffs = $("body").toArray()
-// })
+/* TODO: getting the content */
